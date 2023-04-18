@@ -1,0 +1,56 @@
+﻿@page "/"
+@inject TripSegmentMessageService TripSegmentMessageService
+
+<PageTitle>Byte Decode Test</PageTitle>
+
+<h1>Byte Decode Test</h1>
+<input placeholder="Hexadecimal String" @bind="tripMessageHex" />
+<button class="btn btn-primary" @onclick="DecodeMessage">Submit Byte String</button>
+@if(!(tripSegmentMessageDto is null)) {
+    <p></p>
+    <tt style="white-space: pre-wrap;">@tripMessage</tt>
+}
+
+@code {
+    private TripSegmentMessageDto? tripSegmentMessageDto;
+    private string? tripMessageHex;
+    private string? tripMessage;
+    private bool shouldRender;
+
+    protected override bool ShouldRender() => shouldRender;
+
+    private async void DecodeMessage()
+    {
+        tripSegmentMessageDto = await TripSegmentMessageService.Decode(tripMessageHex);
+        var now = DateTime.Now;
+        tripMessage = $@"
+[{now} INF] =========== beginning developer test message ======================
+[{now} INF] =========== Header Start =======================================
+[{now} INF] Message type: {tripSegmentMessageDto.messageType}
+[{now} INF] Event Time: {tripSegmentMessageDto.currentTime}
+[{now} INF] Device ID: {tripSegmentMessageDto.deviceId}
+[{now} INF] =========== Header End =======================================
+[{now} INF] =========== Message data start =================================
+[{now} INF] Current Speed: {tripSegmentMessageDto.currentSpeed}
+[{now} INF] oedometer: {tripSegmentMessageDto.odometer}
+[{now} INF] Trip ID: {tripSegmentMessageDto.tripId}
+[{now} INF] Trip start: {tripSegmentMessageDto.tripStart}
+[{now} INF] Trip end: {tripSegmentMessageDto.tripEnd}
+[{now} INF] Trip Latitude: {tripSegmentMessageDto.latitude}
+[{now} INF] Trip Longitude: {tripSegmentMessageDto.longtitude}
+[{now} INF] =========== Message data end =================================
+[{now} INF] =========== End f Developer Test Message =======================";
+        if(tripSegmentMessageDto.errors.Count > 0) {
+                            tripMessage += $@"
+[{now} INF] =========== Message error start ==============================";
+            foreach(var error in tripSegmentMessageDto.errors)
+                tripMessage += $@"
+[{now} INF] {error} ";
+                            tripMessage += $@"
+[{now} INF] =========== Message error end ================================";
+        }
+        shouldRender= true;
+        StateHasChanged();
+    }
+}
+
